@@ -5,7 +5,7 @@ Small scripts for various text processing purposes
 
     t2a -- clean strings to use only the ASCII chars: a-z, 0-9 and _.-
 
-    Substitute non-valid characters with _, removes multiple consequtive _'s
+    Substitute non-valid characters with _, removes multiple consecutive _'s
     removes leading and trailing whitespace, and translate Danish characters to
     ASCII and output only lowercase.
 
