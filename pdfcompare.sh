@@ -49,11 +49,12 @@ fi
 for i in $(seq -f%08g 0 $totnum); do
     metrics=(AE PAE PSNR MAE MSE RMSE MEPP FUZZ NCC)
     results=()
+    echo -n "Page $i "
     for metric in ${metrics[@]}; do
         compare -metric $metric $tmpdir/pdf1_$i.png $tmpdir/pdf2_$i.png $tmpdir/diff_$i.png 2> $tmpdir/$metric.$i.txt
-        results+=( "$(cat $tmpdir/$metric.$i.txt)" )
+        echo -n "$metric=$(cat $tmpdir/$metric.$i.txt) "
     done
-    echo "Page: $i result: No change: ${results[@]}"
+    echo
 done
 
 /bin/rm -rf $tmpdir
