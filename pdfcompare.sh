@@ -8,11 +8,11 @@
 #   >pdfcompare 1.pdf 2.pdf
 #
 # Dependencies:
-#   compare, mktemp (uses environment variable TMPDIR to find a suitable directory)
+#   convert or pdftoppm, compare, mktemp (uses environment variable TMPDIR to find a suitable directory)
 #
-# Version: 0.1
+# Version: 0.2
 #
-# Copyright (C) 2017 Thomas Boevith
+# Copyright (C) 2020 Thomas Boevith
 #
 # License: GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 # This is free software: you are free to change and redistribute it. There is NO
@@ -28,14 +28,28 @@ fi
 
 tmpdir=$(mktemp -d -t pdfcompare.XXXXXXXXXX)
 
-density=72
-echo "Rasterizing file: $pdf1"
-convert -background white -alpha off -density $density $pdf1 $tmpdir/pdf1_%08d.png
-num1=$(find  $tmpdir -type f -name 'pdf1_*.png' | wc -l)
+useimagemagick=0
+usepdftoppm=1
 
-echo "Rasterizing file: $pdf2"
-convert -background white -alpha off -density $density $pdf2 $tmpdir/pdf2_%08d.png
-num2=$(find  $tmpdir -type f -name 'pdf2_*.png' | wc -l)
+if test "$useimagemagick" -eq 1; then
+    density=72
+    echo "Rasterizing file: $pdf1"
+    convert -background white -alpha off -density $density $pdf1 $tmpdir/pdf1_%08d.png
+
+    echo "Rasterizing file: $pdf2"
+    convert -background white -alpha off -density $density $pdf2 $tmpdir/pdf2_%08d.png
+elif test "$usepdftoppm" -eq 1; then
+    density=72
+    echo "Rasterizing file: $pdf1"
+    pdftoppm -png "$pdf1" "$tmpdir/pdf1"
+
+    echo "Rasterizing file: $pdf2"
+    pdftoppm -png "$pdf2" "$tmpdir/pdf2"
+else
+    exit 1
+fi
+num1=$(find  $tmpdir -type f -name 'pdf1*.png' | wc -l)
+num2=$(find  $tmpdir -type f -name 'pdf2*.png' | wc -l)
 
 if test "$num1" != "$num2"; then
     echo "Error: Number of pages in file: $pdf1 ($num1) is not equal to the number of pages ($num2) in file: $pdf2"
@@ -46,13 +60,17 @@ else
     echo "Number of pages to compare: $totnum"
 fi
 
-for i in $(seq -f%08g 0 $totnum); do
+for pdf1 in $tmpdir/pdf1*.png; do
+    pdf1basename=$(basename $pdf1)
+    pdf2=$tmpdir/pdf2${pdf1basename#pdf1}
+    diff=$tmpdir/diff${pdf1basename#pdf1}
+    metric=$tmpdir/metric${pdf1basename#pdf1}
     metrics=(AE PAE PSNR MAE MSE RMSE MEPP FUZZ NCC)
     results=()
     echo -n "Page $i "
     for metric in ${metrics[@]}; do
-        compare -metric $metric $tmpdir/pdf1_$i.png $tmpdir/pdf2_$i.png $tmpdir/diff_$i.png 2> $tmpdir/$metric.$i.txt
-        echo -n "$metric=$(cat $tmpdir/$metric.$i.txt) "
+        compare -metric $metric $pdf1 $pdf2 $diff 2> $metric
+        echo -n "$metric=$(cat $metric) "
     done
     echo
 done
