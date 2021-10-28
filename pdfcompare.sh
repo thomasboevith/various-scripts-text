@@ -10,9 +10,9 @@
 # Dependencies:
 #   convert or pdftoppm, compare, mktemp (uses environment variable TMPDIR to find a suitable directory)
 #
-# Version: 0.2
+# Version: 0.3
 #
-# Copyright (C) 2020 Thomas Boevith
+# Copyright (C) 2021 Thomas Boevith
 #
 # License: GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 # This is free software: you are free to change and redistribute it. There is NO
@@ -26,7 +26,25 @@ if ( (test "$pdf1" == "") || (test "$pdf2" == "") ); then
     exit 1
 fi
 
-tmpdir=$(mktemp -d -t pdfcompare.XXXXXXXXXX)
+for f in "$pdf1" "$pdf2"; do
+    if test ! -e "$f"; then
+        echo "$(basename $0): cannot access $f: No such file"
+        exit 1
+    fi
+done
+for f in "$pdf1" "$pdf2"; do
+    ftype="$(file -b $f)"
+    if [ "${ftype%%,*}" != "PDF document" ]; then
+        echo "$(basename $0): file is not a PDF file: $f ... exiting"
+        exit 1
+    fi
+done
+
+tmpdir=$(mktemp --directory /tmp/pdfcompare.XXXXXXXX)
+if test ! -d "$tmpdir"; then
+    echo "$(basename $0): cannot access temporary directory '$tmpdir': No such directory"
+    exit 1
+fi
 
 useimagemagick=0
 usepdftoppm=1
@@ -60,19 +78,23 @@ else
     echo "Number of pages to compare: $totnum"
 fi
 
+i=1
 for pdf1 in $tmpdir/pdf1*.png; do
     pdf1basename=$(basename $pdf1)
     pdf2=$tmpdir/pdf2${pdf1basename#pdf1}
     diff=$tmpdir/diff${pdf1basename#pdf1}
-    metric=$tmpdir/metric${pdf1basename#pdf1}
     metrics=(AE PAE PSNR MAE MSE RMSE MEPP FUZZ NCC)
     results=()
     echo -n "Page $i "
     for metric in ${metrics[@]}; do
-        compare -metric $metric $pdf1 $pdf2 $diff 2> $metric
-        echo -n "$metric=$(cat $metric) "
+        metricfile=$tmpdir/metric${pdf1basename#pdf1}
+        compare -metric $metric $pdf1 $pdf2 $diff 2> $metricfile
+        echo -n "$metric=$(cat $metricfile) "
     done
     echo
+    i=$((i+1))
 done
 
-/bin/rm -rf $tmpdir
+if test -d "$tmpdir"; then
+  rm -r $tmpdir  # Cleaning up
+fi
