@@ -21,3 +21,21 @@ Small scripts for various text processing purposes
       sed, tr, iconv
 
     Version: 0.1
+
+## pdfcompare
+
+    pdfcompare -- compare rasterized versions of PDF files
+
+    Usage:
+      >pdfcompare <pdffile1> <pdffile2>
+
+    Examples:
+      >pdfcompare 1.pdf 2.pdf
+
+    Output: image difference metrics and 3-up visualization of the original PDF
+    files and their differnce image
+
+    Dependencies:
+      convert or pdftoppm, compare, montage, mktemp (uses environment variable
+      TMPDIR to find a suitable directory)
+
