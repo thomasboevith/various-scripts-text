@@ -10,9 +10,9 @@
 # Dependencies:
 #   convert or pdftoppm, compare, mktemp (uses environment variable TMPDIR to find a suitable directory)
 #
-# Version: 0.3
+# Version: 0.4
 #
-# Copyright (C) 2021 Thomas Boevith
+# Copyright (C) 2022 Thomas Boevith
 #
 # License: GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 # This is free software: you are free to change and redistribute it. There is NO
@@ -80,6 +80,8 @@ fi
 
 i=1
 for pdf1 in $tmpdir/pdf1*.png; do
+    num=$(echo "$pdf1" | grep -Eo '\-[0-9]{1,}.png$')
+    num=${num:1:-4}
     pdf1basename=$(basename $pdf1)
     pdf2=$tmpdir/pdf2${pdf1basename#pdf1}
     diff=$tmpdir/diff${pdf1basename#pdf1}
@@ -89,6 +91,7 @@ for pdf1 in $tmpdir/pdf1*.png; do
     for metric in ${metrics[@]}; do
         metricfile=$tmpdir/metric${pdf1basename#pdf1}
         compare -metric $metric $pdf1 $pdf2 $diff 2> $metricfile
+        montage $pdf1 $pdf2 $diff -tile x1 -geometry +5+5 ./diff-pdfcompare-page-${num}.png
         echo -n "$metric=$(cat $metricfile) "
     done
     echo
