@@ -7,8 +7,12 @@
 # Examples:
 #   >pdfcompare 1.pdf 2.pdf
 #
+# Output: image difference metrics and 3-up visualization of the original PDF
+# files and their differnce image
+#
 # Dependencies:
-#   convert or pdftoppm, compare, mktemp (uses environment variable TMPDIR to find a suitable directory)
+#   convert or pdftoppm, compare, montage, mktemp (uses environment variable
+#   TMPDIR to find a suitable directory)
 #
 # Version: 0.4
 #
